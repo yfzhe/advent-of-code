@@ -1,7 +1,8 @@
 #lang racket/base
-(require racket/list)
+(require racket/list racket/string)
 
-(provide run-program) ; for part 2
+(provide run-program
+         get-input-prog) ; for part 2
 
 (module+ test
   (require rackunit))
@@ -41,17 +42,14 @@
   (list-set (list-set prog 1 12)
             2 2))
 
-(module+ main
-  (require racket/string)
+(define (get-input-prog)
+  (call-with-input-file
+    "input.txt"
+    (lambda (in)
+      (map string->number
+           (string-split (read-line in) ",")))))
 
-  (define input-prog
-    (call-with-input-file
-      "input.txt"
-      (lambda (in)
-        (map string->number
-             (string-split (read-line in) ",")))))
-
-  (define prog (init-program input-prog))
-  (define final-prog (run-program prog))
-  (first final-prog))
+(let* ([input-prog (get-input-prog)]
+       [prog (init-program input-prog)])
+  (first (run-program prog)))
 

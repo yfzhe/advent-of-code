@@ -1,6 +1,6 @@
 #lang racket/base
-(require racket/list racket/string)
-(require "star1.rkt") ;; reuse `run-program` from part 1
+(require racket/list)
+(require "star1.rkt") ;; reuse `run-program` and `get-input-prog`
 
 (define (init-prog prog noun verb)
   (list-set (list-set prog 1 noun)
@@ -11,12 +11,7 @@
 (define (run-program* prog noun verb)
   (first (run-program (init-prog prog noun verb))))
 
-(define input-prog
-  (call-with-input-file
-    "input.txt"
-    (lambda (in)
-      (map string->number
-           (string-split (read-line in) ",")))))
+(define input-prog (get-input-prog))
 
 (for*/first ([noun (in-range 100)]
              [verb (in-range 100)]
