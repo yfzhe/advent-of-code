@@ -12,16 +12,14 @@
 
 (define (parse-wire-node step)
   (define direction (string-ref step 0))
-  (define length (substring step 1))
-  (cons direction (string->number length)))
+  (define steps (substring step 1))
+  (cons direction (string->number steps)))
 
 (module+ test
   (check-equal? (parse-wire "R8,U5,L5,D3")
                 '((#\R . 8) (#\U . 5) (#\L . 5) (#\D . 3))))
 
 ;; Pos: (Cons Integer Integer)
-
-(define *central-port* '(0 . 0))
 
 ;; make-pos-updater: (U 'x 'y) * (Integer -> Integer) -> (Pos -> Pos)
 (define (make-pos-updater field updater)
@@ -30,31 +28,30 @@
       [(x) (cons (updater (car pos)) (cdr pos))]
       [(y) (cons (car pos) (updater (cdr pos)))])))
 
+;; dir-char->updater
+;; convert a direction char into a "pos-updater"
+(define (dir-char->updater char)
+  (match char
+    [#\U (make-pos-updater 'y add1)]
+    [#\D (make-pos-updater 'y sub1)]
+    [#\L (make-pos-updater 'x sub1)]
+    [#\R (make-pos-updater 'x add1)]))
+
 ;; print-wire: Wire -> (Hash Pos Integer)
 ;; use a hash map as a canvas, and print **each** point of the wire on it
 (define (print-wire wire)
-  (for/fold ([base '(0 . 0)]
-             [step 0]
-             [canvas (hash)]
-             #:result canvas)
-            ([node (in-list wire)])
-    (define amount (cdr node))
-    (define updater
-      (match (car node)
-        [#\U (make-pos-updater 'y add1)]
-        [#\D (make-pos-updater 'y sub1)]
-        [#\L (make-pos-updater 'x sub1)]
-        [#\R (make-pos-updater 'x add1)]))
-    
-    (for/fold ([pos base]
-               [step step]
-               [canvas canvas])
-              ([_ (in-range amount)])
-      (let* ([next-point (updater pos)]
-             [next-step (add1 step)]
-             [next-canvas
-              (hash-set canvas (updater pos) next-step)])
-        (values next-point next-step next-canvas)))))
+  (for*/fold ([pos '(0 . 0)]
+              [step 0]
+              [canvas (hash)]
+              #:result canvas)
+             ([node (in-list wire)]
+              [updater (in-value (dir-char->updater (car node)))]
+              [_ (in-range (cdr node))])
+    (let* ([next-point (updater pos)]
+           [next-step (add1 step)]
+           [next-canvas
+            (hash-set canvas next-point next-step)])
+      (values next-point next-step next-canvas))))
 
 ;; find-answer: Wire * Wire * (Pos * Steps * Steps -> Integer) -> Integer
 ;; get the intersection of two wires, and use a "rule" to find the answer
