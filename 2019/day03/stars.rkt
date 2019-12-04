@@ -19,28 +19,31 @@
   (check-equal? (parse-wire "R8,U5,L5,D3")
                 '((#\R . 8) (#\U . 5) (#\L . 5) (#\D . 3))))
 
-;; Pos: (Cons Integer Integer)
+;; define a struct for positions
+;; make it transparent to let using hash map easier
+(struct pos (x y) #:transparent)
 
-;; make-pos-updater: (U 'x 'y) * (Integer -> Integer) -> (Pos -> Pos)
-(define (make-pos-updater field updater)
-  (lambda (pos)
-    (case field
-      [(x) (cons (updater (car pos)) (cdr pos))]
-      [(y) (cons (car pos) (updater (cdr pos)))])))
+(define *central-port* (pos 0 0))
+
+;; make-pos-*-updater: (Integer -> Integer) -> (Pos -> Pos)
+(define ((make-pos-x-updater proc) p)
+  (struct-copy pos p [x (proc (pos-x p))]))
+(define ((make-pos-y-updater proc) p)
+  (struct-copy pos p [y (proc (pos-y p))]))
 
 ;; dir-char->updater
-;; convert a direction char into a "pos-updater"
+;; convert a direction char into a "pos-*-updater"
 (define (dir-char->updater char)
   (match char
-    [#\U (make-pos-updater 'y add1)]
-    [#\D (make-pos-updater 'y sub1)]
-    [#\L (make-pos-updater 'x sub1)]
-    [#\R (make-pos-updater 'x add1)]))
+    [#\U (make-pos-y-updater add1)]
+    [#\D (make-pos-y-updater sub1)]
+    [#\L (make-pos-x-updater sub1)]
+    [#\R (make-pos-x-updater add1)]))
 
 ;; print-wire: Wire -> (Hash Pos Integer)
 ;; use a hash map as a canvas, and print **each** point of the wire on it
 (define (print-wire wire)
-  (for*/fold ([pos '(0 . 0)]
+  (for*/fold ([pos *central-port*]
               [step 0]
               [canvas (hash)]
               #:result canvas)
@@ -71,7 +74,7 @@
           (min acc cur)))))
 
 (define (part1-rule pos steps1 steps2)
-  (+ (abs (car pos)) (abs (cdr pos))))
+  (+ (abs (pos-x pos)) (abs (pos-y pos))))
 
 (define (part2-rule pos steps1 steps2)
   (+ steps1 steps2))
