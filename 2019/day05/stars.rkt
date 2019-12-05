@@ -3,28 +3,23 @@
 (module+ test
   (require rackunit))
 
-(define (parse-opcode+params value)
-  (define-values (params opcode)
-    (quotient/remainder value 100))
-  (values
-   opcode
-   (let loop ([num params] [acc '()])
-     (cond
-       [(< num 10) (reverse (cons num acc))]
-       [else (let-values ([(q r) (quotient/remainder num 10)])
-               (loop q (cons r acc)))]))))
+(define (parse-opcode+modes value)
+  (quotient/remainder value 100))
 
-;; (parse-opcode+params 1002) => (values 2 '(0 1))
+(define (get-modes modes idx)
+  (modulo (quotient modes (expt 10 idx))
+          10))
 
-(define (get-param params idx)
-  (if (< idx (length params))
-      (list-ref params idx)
-      0))
+(module+ test
+  (check-equal? (get-modes 10 0) 0)
+  (check-equal? (get-modes 11 0) 1)
+  (check-equal? (get-modes 10 1) 1)
+  (check-equal? (get-modes 10 2) 0))
 
 ;; Program: (listof Integer)
 
-;; read-operand: Mode * Index * Program -> Integer
-(define (read-operand mode input-idx prog)
+;; prog-read: Mode * Index * Program -> Integer
+(define (prog-read mode input-idx prog)
   (case mode
     [(0) ; position mode
      (list-ref prog (list-ref prog input-idx))]
@@ -32,41 +27,62 @@
      (list-ref prog input-idx)]))
 
 ;; write-result: Mode * Index * Integer * Program -> Prog
-(define (write-result mode idx val prog)
+(define (prog-write mode idx val prog)
   (case mode
     [(0) ; position mode
      (list-set prog (list-ref prog idx) val)]))
 
-;; run-program: Program -> (Listof output)
-(define (run-program prog)
-  (let loop ([prog prog] [pos 0] [port 1] [output '()])
-    (define-values (opcode params)
-      (parse-opcode+params (list-ref prog pos)))
+;; run-program: Program -> Input -> final output
+(define (run-program prog input)
+  (let loop ([prog prog] [pos 0] [input input] [output '()])
+    (define-values (opcode modes)
+      (parse-opcode+modes (list-ref prog pos)))
     (case opcode
-      [(99) output]
+      [(99) (car output)]
       [(1 2)
-       (define operand0 (read-operand (get-param params 0) (+ pos 1) prog))
-       (define operand1 (read-operand (get-param params 1) (+ pos 2) prog))
+       (define operand0 (prog-read (get-modes modes 0) (+ pos 1) prog))
+       (define operand1 (prog-read (get-modes modes 1) (+ pos 2) prog))
 
        (define op (if (= opcode 1) + *))
        (define result (op operand0 operand1))
 
-       (loop (write-result (get-param params 2) (+ pos 3) result prog)
+       (loop (prog-write (get-modes modes 2) (+ pos 3) result prog)
              (+ pos 4)
-             port
+             input
              output)]
       [(3)
        (define result-pos (list-ref prog (+ pos 1)))
-       (loop (write-result 0 (+ pos 1) port prog)
+       (loop (prog-write 0 (+ pos 1) input prog)
              (+ pos 2)
              #f
              output)]
       [(4)
        (loop prog
              (+ pos 2)
-             port
-             (cons (read-operand 0 (+ pos 1) prog)
-                   output))])))
+             input
+             (cons (prog-read 0 (+ pos 1) prog)
+                   output))]
+      [(5 6)
+       (define operand0 (prog-read (get-modes modes 0) (+ pos 1) prog))
+       (define operand1 (prog-read (get-modes modes 1) (+ pos 2) prog))
+
+       (if (if (= opcode 6) (zero? operand0) (not (zero? operand0)))
+           (loop prog operand1 input output)
+           (loop prog (+ pos 3) input output))]
+      [(7 8)
+       (define operand0 (prog-read (get-modes modes 0) (+ pos 1) prog))
+       (define operand1 (prog-read (get-modes modes 1) (+ pos 2) prog))
+
+       (define op
+         (if (= opcode 7) < =))
+
+       (define result
+         (if (op operand0 operand1) 1 0))
+
+       (loop (prog-write 0 (+ pos 3) result prog)
+             (+ pos 4)
+             input
+             output)])))
 
 (define prog
   (call-with-input-file "input.txt"
@@ -75,4 +91,8 @@
            (string-split (read-line in) ",")))))
 
 (module+ star1
-  (car (run-program prog)))
+  (run-program prog 1))
+
+(module+ star2
+  (run-program prog 5))
+
