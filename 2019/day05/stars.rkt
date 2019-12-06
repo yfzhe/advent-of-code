@@ -37,8 +37,6 @@
              (get-modes modes (sub1 offset))
              (+ base-pos offset)))
 
-(require racket/trace)
-
 (define (run-program prog input)
   (let loop ([prog prog] [pos 0] [input input] [output '()])
     (define-values (modes opcode)
