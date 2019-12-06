@@ -5,10 +5,9 @@
   (require rackunit))
 
 ;; Object: String
+;; Map: (Hash [around : Object] [base : Object])
 
 (define COM "COM")
-
-;; Map: (Hash [around : Object] [base : Object])
 
 (define (parse-map input)
   (for/hash ([line (in-lines input)])
@@ -21,8 +20,8 @@
     (cond
       [(not target) acc]
       [else
-       (define next (hash-ref map target #f))
-       (loop next (cons target acc))])))
+       (loop (hash-ref map target #f)
+             (cons target acc))])))
 
 (define (get-depth map obj)
   (sub1 (length (find-path-to-COM map obj))))
@@ -51,7 +50,6 @@ in
 
 ;;;--------------------------------------------------
 ;;; part 1
-
 (define (get-answer/1 map)
   (for/sum ([obj (in-hash-keys map)])
     (get-depth map obj)))
@@ -66,7 +64,6 @@ in
 
 ;;;--------------------------------------------------
 ;;; part 2
-
 (define (get-answer/2 map)
   (define COM-to-YOU (find-path-to-COM map "YOU"))
   (define COM-to-SAN (find-path-to-COM map "SAN"))
@@ -75,8 +72,7 @@ in
   (+ (length path-Y) (length path-S) -2))
 
 (module+ test
-  (define input/2
-    (string-append input "\nK)YOU\nI)SAN"))
+  (define input/2 (string-append input "\nK)YOU\nI)SAN"))
   (define map/2 (parse-map (open-input-string input/2)))
   
   (check-equal? (get-answer/2 map/2) 4))
