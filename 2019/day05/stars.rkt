@@ -60,9 +60,9 @@
 
 ;; Runner-Return: poor man's datatype
 ;; - (halt): meet the opcode 99, the program halts
+;; - (next): no io, just goto next instruction
 ;; - (read (Listof Integer)): consume a input, return the remain
 ;; - (write Integer): print a output
-;; - (): no output, and does not halt
 
 ;; run-once: Runner * Inputs -> Runner-Return
 ;; run the current instruction
@@ -83,7 +83,7 @@
 
      (prog-write! prog (get-modes modes 2) (+ pos 3) result)
      (runner-pos-move! runner 4)
-     '()]
+     '(next)]
     [(3) ; read from input
      (prog-write! prog 0 (+ pos 1) (car inputs))
      (runner-pos-move! runner 2)
@@ -102,7 +102,7 @@
      (if (op operand0)
          (runner-pos-jump! runner operand1)
          (runner-pos-move! runner 3))
-     '()]
+     '(next)]
     [(7 8) ; less than / equals
      (define operand0 (prog-read* prog modes pos 1))
      (define operand1 (prog-read* prog modes pos 2))
@@ -112,15 +112,15 @@
 
      (prog-write! prog 0 (+ pos 3) result)
      (runner-pos-move! runner 4)
-     '()]))
+     '(next)]))
 
 (define (run-until-halt runner inputs)
   (let loop ([inputs inputs] [outputs '()])
     (match (run-once runner inputs)
       ['(halt) outputs]
+      ['(next) (loop inputs outputs)]
       [`(read ,remain) (loop remain outputs)]
-      [`(write ,out) (loop inputs (cons out outputs))]
-      ['() (loop inputs outputs)])))
+      [`(write ,out) (loop inputs (cons out outputs))])))
 
 (module+ star1
   (call-with-input-file "input.txt"
