@@ -55,69 +55,84 @@
              (get-modes modes (sub1 offset))
              (+ base-pos offset)))
 
-;; run-program: Program * Inputs -> Outputs
 ;; Inputs: a list of input (Listof Number)
 ;; Outputs: a reversed list of output (Listof Number)
-(define (runner-run runner input)
-  (let loop ([input input] [output '()])
-    (define prog (runner-prog runner))
-    (define pos (runner-pos runner))
 
-    (define-values (modes opcode)
-      (parse-modes+opcode (vector-ref prog pos)))
-    (case opcode
-      [(99) output]
-      [(1 2) ; plus / multiply
-       (define operand0 (prog-read* prog modes pos 1))
-       (define operand1 (prog-read* prog modes pos 2))
+;; Runner-Return: poor man's datatype
+;; - (halt): meet the opcode 99, the program halts
+;; - (read (Listof Integer)): consume a input, return the remain
+;; - (write Integer): print a output
+;; - (): no output, and does not halt
 
-       (define op (case opcode [(1) +] [(2) *]))
-       (define result (op operand0 operand1))
+;; run-once: Runner * Inputs -> Runner-Return
+;; run the current instruction
+(define (run-once runner inputs)
+  (define prog (runner-prog runner))
+  (define pos (runner-pos runner))
+  (define-values (modes opcode)
+    (parse-modes+opcode (vector-ref prog pos)))
 
-       (prog-write! prog (get-modes modes 2) (+ pos 3) result)
-       (runner-pos-move! runner 4)
-       (loop input output)]
-      [(3) ; read from input
-       (prog-write! prog 0 (+ pos 1) (car input))
-       (runner-pos-move! runner 2)
-       (loop (cdr input) output)]
-      [(4) ; write to output
-       (define new-out (prog-read prog 0 (+ pos 1)))
-       (runner-pos-move! runner 2)
-       (loop input (cons new-out output))]
-      [(5 6) ; jump-if-true / jump-if-false
-       (define operand0 (prog-read* prog modes pos 1))
-       (define operand1 (prog-read* prog modes pos 2))
+  (case opcode
+    [(99) '(halt)]
+    [(1 2) ; plus / multiply
+     (define operand0 (prog-read* prog modes pos 1))
+     (define operand1 (prog-read* prog modes pos 2))
 
-       (define op
-         (case opcode [(5) (compose not zero?)] [(6) zero?]))
-       
-       (if (op operand0)
-           (runner-pos-jump! runner operand1)
-           (runner-pos-move! runner 3))
-       (loop input output)]
-      [(7 8) ; less than / equals
-       (define operand0 (prog-read* prog modes pos 1))
-       (define operand1 (prog-read* prog modes pos 2))
+     (define op (case opcode [(1) +] [(2) *]))
+     (define result (op operand0 operand1))
 
-       (define op (case opcode [(7) <] [(8) =]))
-       (define result (if (op operand0 operand1) 1 0))
+     (prog-write! prog (get-modes modes 2) (+ pos 3) result)
+     (runner-pos-move! runner 4)
+     '()]
+    [(3) ; read from input
+     (prog-write! prog 0 (+ pos 1) (car inputs))
+     (runner-pos-move! runner 2)
+     `(read ,(cdr inputs))]
+    [(4) ; write to output
+     (define out (prog-read prog 0 (+ pos 1)))
+     (runner-pos-move! runner 2)
+     `(write ,out)]
+    [(5 6) ; jump-if-true / jump-if-false
+     (define operand0 (prog-read* prog modes pos 1))
+     (define operand1 (prog-read* prog modes pos 2))
 
-       (prog-write! prog 0 (+ pos 3) result)
-       (runner-pos-move! runner 4)
-       (loop input output)])))
+     (define op
+       (case opcode [(5) (compose not zero?)] [(6) zero?]))
+
+     (if (op operand0)
+         (runner-pos-jump! runner operand1)
+         (runner-pos-move! runner 3))
+     '()]
+    [(7 8) ; less than / equals
+     (define operand0 (prog-read* prog modes pos 1))
+     (define operand1 (prog-read* prog modes pos 2))
+
+     (define op (case opcode [(7) <] [(8) =]))
+     (define result (if (op operand0 operand1) 1 0))
+
+     (prog-write! prog 0 (+ pos 3) result)
+     (runner-pos-move! runner 4)
+     '()]))
+
+(define (run-until-halt runner inputs)
+  (let loop ([inputs inputs] [outputs '()])
+    (match (run-once runner inputs)
+      ['(halt) outputs]
+      [`(read ,remain) (loop remain outputs)]
+      [`(write ,out) (loop inputs (cons out outputs))]
+      ['() (loop inputs outputs)])))
 
 (module+ star1
   (call-with-input-file "input.txt"
     (lambda (in)
-      (car (runner-run (make-runner (parse-program in)) '(1))))))
+      (car (run-until-halt (make-runner (parse-program in)) '(1))))))
 
 (module+ star2
   (call-with-input-file "input.txt"
     (lambda (in)
-      (car (runner-run (make-runner (parse-program in)) '(5))))))
+      (car (run-until-halt (make-runner (parse-program in)) '(5))))))
 
 (provide parse-program
          make-runner
-         runner-run)
+         run-once run-until-halt)
 
