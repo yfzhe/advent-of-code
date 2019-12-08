@@ -24,10 +24,12 @@
                 '(0 1 1 0)))
 
 (module+ main
+  (require threading)
   (call-with-input-file "input.txt"
     (lambda (in)
-      (define input (parse-input (read-line in)))
-      (define layers (get-layers input))
-      (define image (decode-image layers))
-      (print-image image))))
+      (~> (read-line in)
+          parse-input
+          get-layers
+          decode-image
+          print-image))))
 
