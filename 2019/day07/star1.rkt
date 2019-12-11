@@ -3,7 +3,7 @@
 (module+ test
   (require rackunit))
 
-(require "../day05/stars.rkt")
+(require "../../intcode/interp.rkt")
 
 (define (build-amps prog)
   (for/list ([i 5]) (make-runner prog)))
@@ -37,4 +37,3 @@
   (call-with-input-file "input.txt"
     (lambda (in)
       (max-thruster (parse-program in)))))
-
