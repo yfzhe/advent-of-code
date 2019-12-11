@@ -1,19 +1,20 @@
 #lang racket/base
 (require racket/string racket/match)
 
-(provide parse-program
+(provide parse-program parse-program*
          make-runner
-         run-once
-         run-until-halt)
+         run-once run-until-halt)
 
 (module+ test
   (require rackunit))
 
 ;; Program: (Listof Integer)
 
+(define (parse-program* str)
+  (map string->number (string-split str ",")))
+
 (define (parse-program in)
-  (map string->number
-       (string-split (read-line in) ",")))
+  (parse-program* (read-line in)))
 
 ;; runner: a intcode program runner, it contains:
 ;; memory (infinity length vector, use (Hash Index Integer) to represent it)
