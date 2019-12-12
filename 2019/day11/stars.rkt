@@ -33,8 +33,7 @@
 (define (paint prog board)
   (define runner (make-runner prog))
 
-  (let loop ([pos 0] [dir +i]
-                     [count 0])
+  (let loop ([pos 0] [dir +i])
     (define outputs (get-next-outputs runner pos board))
     (match outputs
       ['halt board]
@@ -42,14 +41,16 @@
        (define new-dir (turn-dir dir turn))
        (define new-pos (+ pos new-dir))
        (hash-set! board pos color)
-       (loop new-pos new-dir (add1 count))])))
+       (loop new-pos new-dir)])))
 
 (define (print-board board)
   (define positions (hash-keys board))
-  (define leftest (apply min (map real-part positions)))
-  (define rightest (apply max (map real-part positions)))
-  (define highest (apply max (map imag-part positions)))
-  (define lowest (apply min (map imag-part positions)))
+  (define xs (map real-part positions))
+  (define ys (map imag-part positions))
+  (define leftest (apply min xs))
+  (define rightest (apply max xs))
+  (define highest (apply max ys))
+  (define lowest (apply min ys))
 
   (for ([y (in-range highest (sub1 lowest) -1)])
     (for ([x (in-range leftest (add1 rightest) 1)])
