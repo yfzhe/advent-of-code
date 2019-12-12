@@ -44,12 +44,32 @@
        (hash-set! board pos color)
        (loop new-pos new-dir (add1 count))])))
 
-(module+ star1
-  (require threading)
+(define (print-board board)
+  (define positions (hash-keys board))
+  (define leftest (apply min (map real-part positions)))
+  (define rightest (apply max (map real-part positions)))
+  (define highest (apply max (map imag-part positions)))
+  (define lowest (apply min (map imag-part positions)))
 
+  (for ([y (in-range highest (sub1 lowest) -1)])
+    (for ([x (in-range leftest (add1 rightest) 1)])
+      (define pos (make-rectangular x y))
+      (define color (hash-ref board pos 0))
+      (display (if (zero? color) #\space #\#)))
+    (newline)))
+
+(require threading)
+
+(module+ star1
   (call-with-input-file "input.txt"
     (lambda (in)
       (~> (parse-program in)
           (paint _ (make-hash))
-          hash-keys
-          length))))
+          hash-count))))
+
+(module+ star2
+  (call-with-input-file "input.txt"
+    (lambda (in)
+      (~> (parse-program in)
+          (paint _ (make-hash '((0 . 1))))
+          print-board))))
