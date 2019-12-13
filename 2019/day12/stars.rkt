@@ -102,3 +102,23 @@ in
     (lambda (in)
       (total-energy-sum-after-steps (parse-stars in)
                                     1000))))
+
+(define (find-loop/axis axis)
+  (let loop ([acc axis] [steps 1])
+    (define next (move-one-step/axis acc))
+    (cond
+      [(equal? next axis) steps]
+      [else (loop next (add1 steps))])))
+
+(define (find-loop stars)
+  (apply lcm
+         (map find-loop/axis
+              (stars->axes stars))))
+
+(module+ test
+  (check-equal? (find-loop stars) 2772))
+
+(module+ star2
+  (call-with-input-file "input.txt"
+    (lambda (in)
+      (find-loop (parse-stars in)))))
