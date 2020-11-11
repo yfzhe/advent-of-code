@@ -7,7 +7,7 @@
 ;; Map: (Setof Pos)
 
 (define (handle-input prog)
-  (define outputs (reverse (run-until-halt (make-runner prog) '())))
+  (define outputs (run-until-halt (make-runner prog) '()))
   (for/fold ([x 0] [y 0] [scaffold (set)] #:result scaffold)
             ([int (in-list outputs)])
     (case (integer->char int)

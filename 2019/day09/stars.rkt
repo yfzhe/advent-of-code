@@ -9,7 +9,7 @@
       (~> (parse-program in)
           make-runner
           (run-until-halt _ '(1))
-          car))))
+          last))))
 
 (module+ star2
   (call-with-input-file "input.txt"
@@ -17,4 +17,4 @@
       (~> (parse-program in)
           make-runner
           (run-until-halt _ '(2))
-          car))))
+          last))))

@@ -19,7 +19,6 @@
     (lambda~> parse-program
               make-runner
               (run-until-halt _ '())
-              reverse
               draw-tiles
               hash-values
               (count (curry = 2) _))))

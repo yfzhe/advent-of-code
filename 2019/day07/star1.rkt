@@ -12,14 +12,14 @@
 ;; take a list of amps, and a list of phase settings, return the thruster
 (define (run-amps amps phases input)
   (for/fold ([last-output input]
-             #:result (car last-output))
+             #:result (last last-output))
             ([amp (in-list amps)]
              [phase (in-list phases)])
     (run-until-halt amp (cons phase last-output))))
 
 (module+ test
   (define in "3,15,3,16,1002,16,10,16,1,16,15,15,4,15,99,0,0")
-  (define prog (parse-program (open-input-string in)))
+  (define prog (parse-program in))
   (check-equal? (run-amps (build-amps prog) '(4 3 2 1 0) '(0))
                 43210))
 

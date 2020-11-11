@@ -1,7 +1,7 @@
 #lang racket/base
 (require racket/string racket/match)
 
-(provide parse-program parse-program*
+(provide parse-program
          make-runner
          run-once run-until-halt)
 
@@ -10,13 +10,15 @@
 
 ;; Program: (Listof Integer)
 
-(define (parse-program* str)
+;; parse-program : (U Input-Port String) -> Program
+(define (parse-program in)
+  (define str
+    (cond
+      [(string? in) in]
+      [(input-port? in) (read-line in)]))
   (map string->number (string-split str ",")))
 
-(define (parse-program in)
-  (parse-program* (read-line in)))
-
-;; runner: a intcode program runner, it contains:
+;; runner: an intcode program executor, it contains:
 ;; memory (infinity length vector, use (Hash Index Integer) to represent it)
 ;; opcode pointer (pc)
 ;; relative base (bx)
@@ -43,8 +45,7 @@
   (quotient/remainder value 100))
 
 (define (get-modes modes idx)
-  (modulo (quotient modes (expt 10 idx))
-          10))
+  (modulo (quotient modes (expt 10 idx)) 10))
 
 ;; runner-read: Runner * Mode * Index -> Integer
 (define (runner-read runner mode input-idx)
@@ -75,7 +76,7 @@
                (get-modes modes (sub1 offset))
                (+ base-pos offset)))
 
-(define (runner-write!* runner modes base offset val)
+(define (runner-write*! runner modes base offset val)
   (runner-write! runner
                  (get-modes modes (sub1 offset))
                  (+ base offset)
@@ -108,11 +109,11 @@
      (define op (case opcode [(1) +] [(2) *]))
      (define result (op operand0 operand1))
 
-     (runner-write!* runner modes pc 3 result)
+     (runner-write*! runner modes pc 3 result)
      (runner-pc-add! runner 4)
      '(next)]
     [(3) ; read from input
-     (runner-write!* runner modes pc 1 (car inputs))
+     (runner-write*! runner modes pc 1 (car inputs))
      (runner-pc-add! runner 2)
      `(read ,(cdr inputs))]
     [(4) ; write to output
@@ -137,7 +138,7 @@
      (define op (case opcode [(7) <] [(8) =]))
      (define result (if (op operand0 operand1) 1 0))
 
-     (runner-write!* runner modes pc 3 result)
+     (runner-write*! runner modes pc 3 result)
      (runner-pc-add! runner 4)
      '(next)]
     [(9) ; adjust the relative base
@@ -145,10 +146,12 @@
      (runner-pc-add! runner 2)
      '(next)]))
 
+;; run-until-halt: Runner * Inputs -> Outputs
+;; run until the program halts
 (define (run-until-halt runner inputs)
   (let loop ([inputs inputs] [outputs '()])
     (match (run-once runner inputs)
-      ['(halt) outputs]
+      ['(halt) (reverse outputs)]
       ['(next) (loop inputs outputs)]
       [`(read ,remain) (loop remain outputs)]
       [`(write ,out) (loop inputs (cons out outputs))])))
