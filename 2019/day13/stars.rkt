@@ -23,8 +23,6 @@
               hash-values
               (count (curry = 2) _))))
 
-;; FIXME: part 2
-
 (define (play runner)
   (let loop ([paddle-x 0] [ball-x 0] [score #f])
     (define input (sgn (- ball-x paddle-x)))
@@ -33,7 +31,7 @@
       [(list -1 0 new-score) (loop paddle-x ball-x new-score)]
       [(list x _ 3) (loop x ball-x score)]
       [(list x _ 4) (loop paddle-x x score)]
-      [_ (loop ball-x paddle-x score)])))
+      [_ (loop paddle-x ball-x score)])))
 
 (define (next-three-outputs runner inputs)
   (let loop ([outputs '()])
