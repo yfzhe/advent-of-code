@@ -30,9 +30,8 @@
   (check-equal? (count-group/2 '("abc" "acd")) 2)
   (check-equal? (count-group/2 '("a" "a" "b")) 0))
 
-;;; MAIN: finish this work
-;;; main : ((Listof String) -> Nat) -> (Input-Port -> Nat)
-(define ((main counter) in)
+;;; main : Input-Port -> ((Listof String) -> Nat) -> Nat
+(define (main in counter)
   (~> (port->string in)
       (string-split _ "\n\n")
       (map (compose counter string-split) _)
@@ -40,8 +39,8 @@
 
 (module+ star1
   (call-with-input-file "input.txt"
-    (main count-group)))
+    (lambda~> (main _ count-group))))
 
 (module+ star2
   (call-with-input-file "input.txt"
-    (main count-group/2)))
+    (lambda~> (main _ count-group/2))))
