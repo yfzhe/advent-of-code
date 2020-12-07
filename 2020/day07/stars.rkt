@@ -1,5 +1,6 @@
 #lang racket
-(require threading)
+(require threading
+         "../../util.rkt")
 
 (module+ test
   (require rackunit))
@@ -15,16 +16,16 @@
 ;;; parse-input : Input-Port -> Graph
 (define (parse-input in)
   (for*/list ([line (in-lines in)]
-              [rule (in-value (parse-rule line))]
-              [to+weight (in-list (cdr rule))])
-    (edge (car rule) (car to+weight) (cdr to+weight))))
+              [(from to-s) (in-values (lambda () (parse-rule line)))]
+              [to+weight (in-list to-s)])
+    (edge from (car to+weight) (cdr to+weight))))
 
-;;; parse-rule : String -> (Cons Bag (Listof (Cons Bag Nat)))
+;;; parse-rule : String -> (Values Bag (Listof (Cons Bag Nat)))
 (define (parse-rule str)
   (match-define (list _ target containee)
     (regexp-match #px"(.+) bags contain (.+)." str))
-  (cons target
-        (parse-containee containee)))
+  (values target
+          (parse-containee containee)))
 
 ;;; parse-containee : String -> (Listof (Cons Bag Nat))
 (define (parse-containee str)
