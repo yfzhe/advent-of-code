@@ -1,8 +1,17 @@
 #lang racket
-(require "../day01/stars.rkt")
 
 (module+ test
   (require rackunit))
+
+;;; n-sum : (Listof Num) * Num * Nat -> (U (Listof Int) #f)
+;;;  copy from mbutterick's solution:
+;;;  https://github.com/mbutterick/aoc-racket/blob/61e5bf7d9c6c23fd67d5133ad06fb18b3e7966c6/2020/09.rkt#L12
+(define (n-sum nums target n)
+  (for/or ([lst (in-combinations nums n)])
+    (and (= (apply + lst) target)
+         lst)))
+
+(define (two-sum nums target) (n-sum nums target 2))
 
 ;;; parse-input : Input-Port -> (Listof Int)
 (define (parse-input in)

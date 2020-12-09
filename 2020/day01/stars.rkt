@@ -1,8 +1,6 @@
 #lang racket/base
 (require racket/match)
 
-(provide two-sum)
-
 (module+ test
   (require rackunit))
 
