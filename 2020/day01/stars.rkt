@@ -1,6 +1,7 @@
 #lang racket/base
-
 (require racket/match)
+
+(provide two-sum)
 
 (module+ test
   (require rackunit))
@@ -11,7 +12,7 @@
 
 ;; ------------------------- star 1 -------------------------
 
-;; two-sum : (listof number?) * number? -> (list number number)
+;; two-sum : (Listof Num) * Num -> (U (List Num Num) #f)
 (define (two-sum nums target)
   (define hash
    (for/hash ([num (in-list nums)])
@@ -19,6 +20,7 @@
   (for/or ([num (in-list nums)])
     (define res (hash-ref hash num #f))
     (and res
+         (not (= num res))
          (list num res))))
 
 (module+ test
