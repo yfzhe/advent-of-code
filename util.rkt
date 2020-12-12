@@ -1,10 +1,29 @@
 #lang racket/base
 
 (require (for-syntax racket/base
-                     syntax/parse))
+                     syntax/parse
+                     syntax/for-body))
 
-(provide in-values)
+(provide for/count for*/count
+         in-values)
 
+;;; for/count & for*/count
+(define-for-syntax (make-for-count for)
+  (lambda (stx)
+   (syntax-parse stx
+     [(_ clauses body ...+)
+      (with-syntax ([((pre-body ...) (post-body ...))
+                     (split-for-body stx #'(body ...))])
+        #`(#,for stx
+            ([acc 0])
+            clauses
+            pre-body ...
+            (if (let () post-body ...)
+                (add1 acc)
+                acc)))])))
+
+(define-syntax for/count (make-for-count #'for/fold/derived))
+(define-syntax for*/count (make-for-count #'for*/fold/derived))
 ;;; in-values: multi-values sequence variant of `in-value`
 ;;;   copy from https://github.com/LiberalArtist/adjutor/blob/0f7225abdb42956ead9abdd34d56c236550510fc/stable/in-value-star.rkt#L192
 (struct values-sequence (thunk)
