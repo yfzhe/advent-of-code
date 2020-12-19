@@ -1,4 +1,5 @@
 #lang racket
+(require "../../util.rkt")
 
 (module+ test
   (require rackunit))
@@ -18,12 +19,6 @@
   (values (parse-fields fields)
           (car (parse-tickets my-ticket))
           (parse-tickets nearby)))
-
-(define-match-expander num-str
-  (lambda (stx)
-    (syntax-case stx ()
-      [(_ id)
-       #'(app string->number (? number? id))])))
 
 ;;; parse-fields : String -> (Listof Field)
 (define (parse-fields lines)
@@ -86,7 +81,7 @@
 
 ;;; solve-fields : (Listof Field) * (Listof Ticket) -> (Dict Index Field)
 (define (solve-fields fields tickets)
-  (define valid-tickets (all-valid-tickets tickets))
+  (define valid-tickets (all-valid-tickets fields tickets))
   (let loop ([candidates (get-candidates fields valid-tickets)]
              [acc '()])
     (cond

@@ -1,10 +1,12 @@
 #lang racket/base
-
-(require (for-syntax racket/base
+(require racket/match
+         (for-syntax racket/base
                      syntax/parse
                      syntax/for-body))
 
 (provide for/count for*/count
+         number-string
+         (rename-out [number-string num-str])
          in-values)
 
 ;;; for/count & for*/count
@@ -24,6 +26,14 @@
 
 (define-syntax for/count (make-for-count #'for/fold/derived))
 (define-syntax for*/count (make-for-count #'for*/fold/derived))
+
+;;; match expanders
+(define-match-expander number-string
+  (lambda (stx)
+    (syntax-case stx ()
+      [(_ id)
+       #'(app string->number (? number? id))])))
+
 ;;; in-values: multi-values sequence variant of `in-value`
 ;;;   copy from https://github.com/LiberalArtist/adjutor/blob/0f7225abdb42956ead9abdd34d56c236550510fc/stable/in-value-star.rkt#L192
 (struct values-sequence (thunk)
