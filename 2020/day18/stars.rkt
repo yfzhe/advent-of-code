@@ -24,11 +24,11 @@
   (lexer
    [(eof) 'EOF]
    [#\space (expr-lexer input-port)]
-   ["+" '+]
-   ["*" '*]
-   ["(" 'OPEN-PAREN]
-   [")" 'CLOSE-PAREN]
-   [(:+ (:/ "0" "9")) (token-NUM (string->number lexeme))]))
+   [#\+ '+]
+   [#\* '*]
+   [#\( 'OPEN-PAREN]
+   [#\) 'CLOSE-PAREN]
+   [(:+ (:/ #\0 #\9)) (token-NUM (string->number lexeme))]))
 
 ;;; the difference between part 1 and 2 is the precedence of + and *:
 ;;; - in part 1, the precedence of + and * is the same;
@@ -93,20 +93,14 @@
   (check-equal? (eval-expr '(+ 1 2)) 3)
   (check-equal? (eval-expr '(+ (* 1 2) (+ 3 4))) 9))
 
-;;; read-and-eval : String -> Number
-(define (read-and-eval str)
-  (eval-expr (parse-expr str)))
-(define (read-and-eval/2 str)
-  (eval-expr (parse-expr/2 str)))
-
 (module+ star1
   (call-with-input-file "input.txt"
     (lambda (in)
       (for/sum ([line (in-lines in)])
-        (read-and-eval line)))))
+        (eval-expr (parse-expr line))))))
 
 (module+ star2
   (call-with-input-file "input.txt"
     (lambda (in)
       (for/sum ([line (in-lines in)])
-        (read-and-eval/2 line)))))
+        (eval-expr (parse-expr/2 line))))))
