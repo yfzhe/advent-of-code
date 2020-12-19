@@ -30,7 +30,11 @@
    [")" 'CLOSE-PAREN]
    [(:+ (:/ "0" "9")) (token-NUM (string->number lexeme))]))
 
-(define expr-parser
+;;; the difference between part 1 and 2 is the precedence of + and *:
+;;; - in part 1, the precedence of + and * is the same;
+;;; - but in part 2, + has higher precedence than *.
+;;; so make a macro to make parsers
+(define-syntax-rule (make-expr-parser prec)
   (parser
    (tokens value-tokens op-tokens)
    (start start)
@@ -39,7 +43,7 @@
     (lambda (tok-ok? tok-name tok-value)
       (error 'parse-expr "bad input")))
 
-   (precs (left + *))
+   prec ;; (precs ...)
 
    (grammar
     (start [() #f]
@@ -49,6 +53,11 @@
           [(expr * expr) (list '* $1 $3)]
           [(OPEN-PAREN expr CLOSE-PAREN) $2]))))
 
+(define expr-parser
+  (make-expr-parser (precs (left + *))))
+(define expr-parser/2
+  (make-expr-parser (precs (left *) (left +))))
+
 ;;; parse-expr : String -> Expr
 (define (parse-expr str)
   (define in (open-input-string str))
@@ -57,9 +66,19 @@
 (module+ test
   (check-equal? (parse-expr "1") 1)
   (check-equal? (parse-expr "1 + 2") '(+ 1 2))
-  (check-equal? (parse-expr "1 + 2 * 4") '(* (+ 1 2) 4))
+  (check-equal? (parse-expr "1 * 2 + 4") '(+ (* 1 2) 4))
   (check-equal? (parse-expr "1 + (2 * 3 + 4) * 5 + 6")
                 '(+ (* (+ 1 (+ (* 2 3) 4)) 5) 6)))
+
+;;; parse-expr/2 : String -> Expr
+(define (parse-expr/2 str)
+  (define in (open-input-string str))
+  (expr-parser/2 (lambda () (expr-lexer in))))
+
+(module+ test
+  (check-equal? (parse-expr/2 "1 * 2 + 4") '(* 1 (+ 2 4)))
+  (check-equal? (parse-expr/2 "1 + (2 * 3 + 4) * 5 + 6")
+                '(* (+ 1 (* 2 (+ 3 4))) (+ 5 6))))
 
 ;;; ---------------------- EVAL  --------------------------
 
@@ -77,9 +96,17 @@
 ;;; read-and-eval : String -> Number
 (define (read-and-eval str)
   (eval-expr (parse-expr str)))
+(define (read-and-eval/2 str)
+  (eval-expr (parse-expr/2 str)))
 
 (module+ star1
   (call-with-input-file "input.txt"
     (lambda (in)
       (for/sum ([line (in-lines in)])
         (read-and-eval line)))))
+
+(module+ star2
+  (call-with-input-file "input.txt"
+    (lambda (in)
+      (for/sum ([line (in-lines in)])
+        (read-and-eval/2 line)))))
