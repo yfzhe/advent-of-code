@@ -1,7 +1,8 @@
 #lang racket
 
 (module+ test
-  (require rackunit))
+  (require rackunit
+           aoc-util/test))
 
 ;; <command> ::= (forward <int>)
 ;;             | (down <int>)
@@ -33,12 +34,6 @@
        (values x (+ y n))]
       [`(up ,n)
        (values x (- y n))])))
-
-(module+ test
-  (define-syntax-rule (check-values-equal? expr target)
-    (check-equal?
-     (call-with-values (lambda () expr) list)
-     (call-with-values (lambda () target) list))))
 
 (module+ test
   (check-values-equal? (eval input)
