@@ -40,8 +40,7 @@
 
 (define (make-hand-order kind card-order-string)
   (define card-order
-    (order-map (order-reverse real-order)
-               (lambda (c) (index-of (string->list card-order-string) c))))
+    (enum-order (reverse (string->list card-order-string))))
   (order-chain
    (order-map real-order kind)
    (order-map (lexicographic-order card-order) string->list)))

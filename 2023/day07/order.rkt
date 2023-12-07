@@ -18,16 +18,15 @@
     (cond
       [(< x y) '<] [(= x y) '=] [else '>])))
 
+;; enum-order : (List e) -> (Order e)
+(define (enum-order enum-cases)
+  (order-map real-order
+             (lambda (e) (index-of enum-cases e))))
+
 ;; order-map : (Order a) * (a -> b) -> (Order b)
 (define (order-map order f)
   (lambda (x y)
     (order (f x) (f y))))
-
-;; order-reverse : (Order a) -> (Order a)
-(define (order-reverse order)
-  (lambda (x y)
-    (match (order x y)
-      ['< '>] ['= '=] ['> '<])))
 
 ;; order-chain : (Order a) * (Order a) -> (Order a)
 (define (order-chain ord1 ord2)
@@ -41,14 +40,14 @@
 (define (lexicographic-order order)
   (letrec ([cmp
             (lambda (xs ys)
-              (cond
-                [(and (empty? xs) (empty? ys)) '=]
-                [(empty? xs) '<]
-                [(empty? ys) '>]
-                [else
-                 (match (order (car xs) (car ys))
+              (match* (xs ys)
+                [('() '()) '=]
+                [('()  _ ) '<]
+                [(_   '()) '>]
+                [((cons x xs*) (cons y ys*))
+                 (match (order x y)
                    ['< '<]
-                   ['= (cmp (cdr xs) (cdr ys))]
+                   ['= (cmp xs* ys*)]
                    ['> '>])]))])
     cmp))
 
