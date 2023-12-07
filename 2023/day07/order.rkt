@@ -1,0 +1,68 @@
+#lang racket/base
+(require racket/match racket/list)
+
+(provide (all-defined-out))
+
+;; influenced by rebellion's comparators:
+;; - https://docs.racket-lang.org/rebellion/Comparators.html
+;; see also:
+;; - https://docs.racket-lang.org/data/Orders_and_Ordered_Dictionaries.html
+;; - https://srfi.schemers.org/srfi-67/srfi-67.html
+
+;; An "order" compares two values and return '<, '= or '>
+;; (Order a) = a * a -> (U '< '= '>)
+
+;; real-order : (Order Real)
+(define real-order
+  (lambda (x y)
+    (cond
+      [(< x y) '<] [(= x y) '=] [else '>])))
+
+;; order-map : (Order a) * (a -> b) -> (Order b)
+(define (order-map order f)
+  (lambda (x y)
+    (order (f x) (f y))))
+
+;; order-reverse : (Order a) -> (Order a)
+(define (order-reverse order)
+  (lambda (x y)
+    (match (order x y)
+      ['< '>] ['= '=] ['> '<])))
+
+;; order-chain : (Order a) * (Order a) -> (Order a)
+(define (order-chain ord1 ord2)
+  (lambda (x y)
+    (match (ord1 x y)
+      ['< '<]
+      ['= (ord2 x y)]
+      ['> '>])))
+
+;; lexicographic-order : (Order a) -> (Order (List a))
+(define (lexicographic-order order)
+  (letrec ([cmp
+            (lambda (xs ys)
+              (cond
+                [(and (empty? xs) (empty? ys)) '=]
+                [(empty? xs) '<]
+                [(empty? ys) '>]
+                [else
+                 (match (order (car xs) (car ys))
+                   ['< '<]
+                   ['= (cmp (cdr xs) (cdr ys))]
+                   ['> '>])]))])
+    cmp))
+
+;; <? : (Order a) -> (a * a -> Boolean)
+(define (<? order)
+  (lambda (x y)
+    (eq? (order x y) '<)))
+
+;; =? : (Order a) -> (a * a -> Boolean)
+(define (=? order)
+  (lambda (x y)
+    (eq? (order x y) '=)))
+
+;; >? : (Order a) -> (a * a -> Boolean)
+(define (>? order)
+  (lambda (x y)
+    (eq? (order x y) '>)))
