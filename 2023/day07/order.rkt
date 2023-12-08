@@ -23,7 +23,7 @@
   (order-map real-order
              (lambda (e) (index-of enum-cases e))))
 
-;; order-map : (Order a) * (a -> b) -> (Order b)
+;; order-map : (Order b) * (a -> b) -> (Order a)
 (define (order-map order f)
   (lambda (x y)
     (order (f x) (f y))))
