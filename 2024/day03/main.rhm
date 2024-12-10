@@ -1,0 +1,56 @@
+#lang rhombus
+
+import: rhombus/rx open
+
+interface Expr
+
+class Mul(lhs, rhs): implements Expr
+class Do(): implements Expr
+class Donot(): implements Expr
+
+fun parse_input(in :~ Port.Input) :: List.of(Expr):
+  def pat = rx'(($mul : "mul") "(" ($lhs: digit+) "," ($rhs: digit+) ")")
+                || (($do : "do") "()")
+                || (($donot : "don't") "()")'
+
+  recur loop(acc = []):
+    def result = pat.match_in(in)
+    if !result
+    | acc
+    | let expr:
+        cond
+        | result[#'mul]: Mul(result[#'lhs].utf8_string().to_int(),
+                             result[#'rhs].utf8_string().to_int())
+        | result[#'do]: Do()
+        | result[#'donot]: Donot()
+
+      loop(acc ++ [expr])
+
+fun solve_1(exprs :~ List.of(Expr)):
+  for values(sum = 0):
+    each e: exprs
+    keep_when e is_a Mul
+    sum + e.lhs * e.rhs
+
+check:
+  solve_1(parse_input(Port.Input.open_file("test"))) ~is 161
+
+fun solve_2(exprs :~ List.of(Expr)):
+  def values(sum, _):
+    for values(sum = 0, do: #true):
+      each e: exprs
+      match e
+      | Mul(lhs, rhs):
+          if do
+          | values(sum + lhs * rhs, do)
+          | values(sum, do)
+      | Do(): values(sum, #true)
+      | Donot(): values(sum, #false)
+  sum
+
+check:
+  solve_2(parse_input(Port.Input.open_file("test2"))) ~is 48
+
+// def exprs = parse_input(Port.Input.open_file("input"))
+// solve_1(exprs)
+// solve_2(exprs)
